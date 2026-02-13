@@ -36,7 +36,8 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   step?: AgentStep;
-  messageType?: "text" | "plan" | "error";
+  messageType?: "text" | "plan" | "error" | "artifact";
+  artifactVersion?: number;
 }
 
 // Agent step for streaming progress
@@ -51,7 +52,7 @@ export type AgentStep =
 
 // SSE event from the API
 export interface SSEEvent {
-  step: AgentStep;
+  step?: AgentStep;
   message?: string;
   plan?: PlanOutput;
   code?: string;
@@ -59,6 +60,7 @@ export interface SSEEvent {
   version?: number;
   componentTree?: ComponentNode;
   error?: string;
+  directResponse?: string;
 }
 
 // API request body
@@ -66,4 +68,5 @@ export interface GenerateRequest {
   message: string;
   previousTree?: ComponentNode;
   conversationHistory?: { role: string; content: string }[];
+  proMode?: boolean;
 }
