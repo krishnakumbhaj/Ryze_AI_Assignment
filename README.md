@@ -80,12 +80,12 @@ pnpm install
 ```
 
 ### Step 3: Configure Environment Variables
-Create a `.env.local` file in the project root:
+Create a `.env` file in the project root:
 ```bash
-cp .env.example .env.local
+cp .env
 ```
 
-Edit `.env.local` and add your Gemini API key:
+Edit `.env` and add your Gemini API key:
 ```env
 GEMINI_API_KEY=your_actual_api_key_here
 ```
