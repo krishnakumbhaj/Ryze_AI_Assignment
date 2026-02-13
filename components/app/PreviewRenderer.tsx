@@ -29,7 +29,11 @@ const COMPONENT_MAP: Record<string, React.ComponentType<any>> = {
   Chart,
 };
 
-function renderNode(node: ComponentNode | string, key: number): React.ReactNode {
+function renderNode(
+  node: ComponentNode | string,
+  key: number,
+  theme: "light" | "dark"
+): React.ReactNode {
   if (typeof node === "string") {
     return node;
   }
@@ -46,10 +50,10 @@ function renderNode(node: ComponentNode | string, key: number): React.ReactNode 
     );
   }
 
-  const children = node.children?.map((child, i) => renderNode(child, i));
+  const children = node.children?.map((child, i) => renderNode(child, i, theme));
 
   return (
-    <Component key={key} {...(node.props || {})}>
+    <Component key={key} {...(node.props || {})} theme={theme}>
       {children}
     </Component>
   );
@@ -57,19 +61,28 @@ function renderNode(node: ComponentNode | string, key: number): React.ReactNode 
 
 interface PreviewRendererProps {
   tree: ComponentNode | null;
+  theme?: "light" | "dark";
 }
 
-export default function PreviewRenderer({ tree }: PreviewRendererProps) {
+export default function PreviewRenderer({ tree, theme = "light" }: PreviewRendererProps) {
   if (!tree) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center gap-3 py-20">
+      <div className={`flex flex-col items-center justify-center h-full text-center gap-3 py-20 ${
+        theme === "dark" ? "text-gray-400" : "text-gray-400"
+      }`}>
         <div className="text-5xl opacity-30">🎨</div>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm">
           Describe a UI in the chat to generate a preview
         </p>
       </div>
     );
   }
 
-  return <div className="min-h-full">{renderNode(tree, 0)}</div>;
+  return (
+    <div className={`min-h-full p-4 transition-colors ${
+      theme === "dark" ? "bg-gray-900" : "bg-white"
+    }`}>
+      {renderNode(tree, 0, theme)}
+    </div>
+  );
 }

@@ -9,34 +9,35 @@ interface ChartProps {
   type?: "bar" | "line" | "pie";
   title?: string;
   data?: ChartDataPoint[];
+  theme?: "light" | "dark";
 }
 
 const PIE_COLORS = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316", "#ec4899"];
 
-function BarChart({ data }: { data: ChartDataPoint[] }) {
+function BarChart({ data, isDark }: { data: ChartDataPoint[]; isDark: boolean }) {
   const max = Math.max(...data.map((d) => d.value), 1);
   return (
-    <div className="flex items-end gap-2 h-[200px] py-2">
+    <div className="flex items-end gap-3 h-[200px] py-2">
       {data.map((d, i) => (
-        <div key={i} className="flex flex-col items-center flex-1 gap-1 h-full justify-end">
-          <span className="text-[11px] text-gray-700 font-medium">{d.value}</span>
+        <div key={i} className="flex flex-col items-center flex-1 gap-1.5 h-full justify-end">
+          <span className={`text-[11px] font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}>{d.value}</span>
           <div
-            className="w-full max-w-12 bg-indigo-500 rounded-t hover:bg-indigo-600 transition-colors min-h-1"
+            className="w-full max-w-14 bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-md hover:from-indigo-500 hover:to-indigo-300 transition-all min-h-1 shadow-sm"
             style={{ height: `${(d.value / max) * 100}%` }}
           />
-          <span className="text-[11px] text-gray-500 text-center whitespace-nowrap">{d.label}</span>
+          <span className={`text-[11px] text-center whitespace-nowrap ${isDark ? "text-gray-400" : "text-gray-500"}`}>{d.label}</span>
         </div>
       ))}
     </div>
   );
 }
 
-function LineChart({ data }: { data: ChartDataPoint[] }) {
+function LineChart({ data, isDark }: { data: ChartDataPoint[]; isDark: boolean }) {
   if (data.length === 0) return null;
   const max = Math.max(...data.map((d) => d.value), 1);
   const w = 400;
   const h = 200;
-  const padding = 20;
+  const padding = 30;
 
   const points = data.map((d, i) => ({
     x: padding + (i / Math.max(data.length - 1, 1)) * (w - 2 * padding),
@@ -49,17 +50,26 @@ function LineChart({ data }: { data: ChartDataPoint[] }) {
   return (
     <div className="relative h-[200px] w-full">
       <svg className="w-full h-full" viewBox={`0 0 ${w} ${h}`}>
-        <path className="fill-indigo-500/10" d={areaPath} />
-        <path className="fill-none stroke-indigo-500 stroke-2" d={linePath} />
+        <defs>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+        <path fill="url(#areaGradient)" d={areaPath} />
+        <path className="fill-none stroke-indigo-500 stroke-[2.5]" d={linePath} strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => (
-          <circle key={i} className="fill-indigo-500" cx={p.x} cy={p.y} r={4} />
+          <g key={i}>
+            <circle className="fill-white stroke-indigo-500 stroke-2" cx={p.x} cy={p.y} r={5} />
+            <circle className="fill-indigo-500" cx={p.x} cy={p.y} r={2} />
+          </g>
         ))}
       </svg>
     </div>
   );
 }
 
-function PieChart({ data }: { data: ChartDataPoint[] }) {
+function PieChart({ data, isDark }: { data: ChartDataPoint[]; isDark: boolean }) {
   const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
   let currentAngle = 0;
   const cx = 80, cy = 80, r = 70;
@@ -83,17 +93,18 @@ function PieChart({ data }: { data: ChartDataPoint[] }) {
   });
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex items-center gap-6 flex-wrap">
       <svg className="w-40 h-40" viewBox="0 0 160 160">
         {slices.map((s, i) => (
-          <path key={i} d={s.pathData} fill={s.color} />
+          <path key={i} d={s.pathData} fill={s.color} className="hover:opacity-80 transition-opacity" />
         ))}
       </svg>
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {slices.map((s, i) => (
-          <div key={i} className="flex items-center gap-2 text-[13px] text-gray-700">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: s.color }} />
-            {s.label}: {s.value}
+          <div key={i} className={`flex items-center gap-2.5 text-[13px] ${isDark ? "text-gray-300" : "text-gray-700"}`}>
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: s.color }} />
+            <span className="font-medium">{s.label}:</span>
+            <span className={isDark ? "text-gray-400" : "text-gray-500"}>{s.value}</span>
           </div>
         ))}
       </div>
@@ -101,13 +112,15 @@ function PieChart({ data }: { data: ChartDataPoint[] }) {
   );
 }
 
-export default function Chart({ type = "bar", title, data = [] }: ChartProps) {
+export default function Chart({ type = "bar", title, data = [], theme = "light" }: ChartProps) {
+  const isDark = theme === "dark";
+  
   return (
-    <div className="p-4">
-      {title && <h4 className="text-sm font-semibold text-gray-700 m-0 mb-3">{title}</h4>}
-      {type === "bar" && <BarChart data={data} />}
-      {type === "line" && <LineChart data={data} />}
-      {type === "pie" && <PieChart data={data} />}
+    <div className={`p-5 rounded-xl ${isDark ? "bg-gray-800/50" : "bg-gray-50"}`}>
+      {title && <h4 className={`text-sm font-semibold m-0 mb-4 ${isDark ? "text-gray-200" : "text-gray-700"}`}>{title}</h4>}
+      {type === "bar" && <BarChart data={data} isDark={isDark} />}
+      {type === "line" && <LineChart data={data} isDark={isDark} />}
+      {type === "pie" && <PieChart data={data} isDark={isDark} />}
     </div>
   );
 }

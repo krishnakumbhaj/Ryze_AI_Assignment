@@ -8,6 +8,7 @@ interface ContainerProps {
   justify?: "start" | "center" | "end" | "between" | "around";
   wrap?: boolean;
   children?: React.ReactNode;
+  theme?: "light" | "dark";
 }
 
 const GAP = { none: "gap-0", sm: "gap-2", md: "gap-4", lg: "gap-6" };

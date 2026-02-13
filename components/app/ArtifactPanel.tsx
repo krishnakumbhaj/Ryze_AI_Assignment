@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ComponentNode } from "@/lib/types";
 import PreviewRenderer from "./PreviewRenderer";
+import { Sun, Moon } from "lucide-react";
 
 interface ArtifactPanelProps {
   tree: ComponentNode | null;
@@ -30,11 +31,16 @@ export default function ArtifactPanel({
   isLoading,
 }: ArtifactPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light");
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const togglePreviewTheme = () => {
+    setPreviewTheme(prev => prev === "light" ? "dark" : "light");
   };
 
   return (
@@ -67,6 +73,25 @@ export default function ArtifactPanel({
 
         {/* Controls */}
         <div className="flex items-center gap-1 sm:gap-1.5">
+          {/* Theme toggle (preview tab only) */}
+          {activeTab === "preview" && (
+            <button
+              onClick={togglePreviewTheme}
+              className={`p-1 sm:p-1.5 rounded-md transition-colors cursor-pointer ${
+                previewTheme === "dark"
+                  ? "bg-indigo-500/20 text-indigo-400"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-[#30302e]"
+              }`}
+              title={`Switch to ${previewTheme === "light" ? "dark" : "light"} theme`}
+            >
+              {previewTheme === "light" ? (
+                <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              ) : (
+                <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              )}
+            </button>
+          )}
+
           {/* Version selector */}
           {totalVersions > 0 && (
             <select
@@ -123,8 +148,10 @@ export default function ArtifactPanel({
       {/* Content */}
       <div className="flex-1 overflow-auto min-h-0">
         {activeTab === "preview" ? (
-          <div className="h-full bg-white rounded-b-none p-2 sm:p-4">
-            <PreviewRenderer tree={tree} />
+          <div className={`h-full rounded-b-none transition-colors ${
+            previewTheme === "dark" ? "bg-gray-900" : "bg-white"
+          }`}>
+            <PreviewRenderer tree={tree} theme={previewTheme} />
           </div>
         ) : (
           <div className="p-3 sm:p-4">
