@@ -16,9 +16,7 @@ export default function Navbar({ title, links = [], theme = "light" }: NavbarPro
         : "bg-white border-b border-gray-200 shadow-sm"
     }`}>
       <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-          isDark ? "bg-indigo-500 text-white" : "bg-indigo-500 text-white"
-        }`}>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold`} style={{ backgroundColor: '#a5d5d5', color: '#ffffff' }}>
           {title.charAt(0)}
         </div>
         <span className={`text-lg font-bold ${

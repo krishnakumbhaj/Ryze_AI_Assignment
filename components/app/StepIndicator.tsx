@@ -71,7 +71,7 @@ export default function StepIndicator({
                     status === "done"
                       ? "bg-emerald-500/20 text-emerald-400"
                       : status === "active"
-                        ? "bg-indigo-500/20 text-indigo-400 animate-pulse-dot"
+                        ? "bg-[#a5d5d5]/20 text-[#a5d5d5] animate-pulse-dot"
                         : "bg-zinc-700/50 text-zinc-500"
                   }`}
                 >
@@ -82,7 +82,7 @@ export default function StepIndicator({
                     status === "done"
                       ? "text-emerald-400"
                       : status === "active"
-                        ? "text-indigo-400"
+                        ? "text-[#a5d5d5]"
                         : "text-zinc-500"
                   }`}
                 >

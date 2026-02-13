@@ -24,7 +24,7 @@ const WEIGHT = { normal: "font-normal", medium: "font-medium", bold: "font-bold"
 const COLOR_LIGHT = {
   default: "text-gray-900",
   muted: "text-gray-500",
-  primary: "text-indigo-600",
+  primary: "text-[#a5d5d5]",
   danger: "text-red-600",
   success: "text-emerald-600",
 };
@@ -32,7 +32,7 @@ const COLOR_LIGHT = {
 const COLOR_DARK = {
   default: "text-gray-100",
   muted: "text-gray-400",
-  primary: "text-indigo-400",
+  primary: "text-[#a5d5d5]",
   danger: "text-red-400",
   success: "text-emerald-400",
 };

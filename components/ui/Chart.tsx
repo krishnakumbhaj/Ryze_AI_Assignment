@@ -22,7 +22,7 @@ function BarChart({ data, isDark }: { data: ChartDataPoint[]; isDark: boolean })
         <div key={i} className="flex flex-col items-center flex-1 gap-1.5 h-full justify-end">
           <span className={`text-[11px] font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}>{d.value}</span>
           <div
-            className="w-full max-w-14 bg-gradient-to-t from-indigo-600 to-indigo-400 rounded-t-md hover:from-indigo-500 hover:to-indigo-300 transition-all min-h-1 shadow-sm"
+            className="w-full max-w-14 bg-gradient-to-t from-[#a5d5d5] to-[#92c9c9] rounded-t-md hover:from-[#92c9c9] hover:to-[#74bdbd] transition-all min-h-1 shadow-sm"
             style={{ height: `${(d.value / max) * 100}%` }}
           />
           <span className={`text-[11px] text-center whitespace-nowrap ${isDark ? "text-gray-400" : "text-gray-500"}`}>{d.label}</span>
@@ -51,17 +51,17 @@ function LineChart({ data, isDark }: { data: ChartDataPoint[]; isDark: boolean }
     <div className="relative h-[200px] w-full">
       <svg className="w-full h-full" viewBox={`0 0 ${w} ${h}`}>
         <defs>
-          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.05" />
-          </linearGradient>
+             <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+               <stop offset="0%" stopColor="#a5d5d5" stopOpacity="0.28" />
+               <stop offset="100%" stopColor="#a5d5d5" stopOpacity="0.05" />
+             </linearGradient>
         </defs>
         <path fill="url(#areaGradient)" d={areaPath} />
-        <path className="fill-none stroke-indigo-500 stroke-[2.5]" d={linePath} strokeLinecap="round" strokeLinejoin="round" />
+           <path className="fill-none stroke-[#a5d5d5] stroke-[2.5]" d={linePath} strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => (
           <g key={i}>
-            <circle className="fill-white stroke-indigo-500 stroke-2" cx={p.x} cy={p.y} r={5} />
-            <circle className="fill-indigo-500" cx={p.x} cy={p.y} r={2} />
+               <circle className="fill-white stroke-[#a5d5d5] stroke-2" cx={p.x} cy={p.y} r={5} />
+               <circle className="fill-[#a5d5d5]" cx={p.x} cy={p.y} r={2} />
           </g>
         ))}
       </svg>

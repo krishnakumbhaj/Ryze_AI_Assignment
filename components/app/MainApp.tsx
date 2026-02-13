@@ -4,7 +4,9 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import ChatPanel from "./ChatPanel";
 import ArtifactPanel from "./ArtifactPanel";
 import { ChatMessage, AgentStep, ComponentNode, SSEEvent } from "@/lib/types";
-
+import logo from "@/images/logo.png"
+import logo_name from "@/images/logo_name.png"
+import Image from "next/image";
 export default function MainApp() {
   // Messages & loading
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -265,12 +267,8 @@ export default function MainApp() {
       {/* ═══ Top Bar ═══ */}
       <header className="flex items-center justify-between px-3 sm:px-5 py-2 sm:py-2.5 border-b border-[#3f3f3a] bg-[#1f1e1d] shrink-0">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-xs sm:text-sm font-bold">
-            R
-          </div>
-          <h1 className="text-xs sm:text-sm font-semibold text-white tracking-tight">
-            Ryze AI
-          </h1>
+          <Image src={logo} alt="Logo" className="w-8 h-8 sm:w-8 sm:h-8" />
+          <Image src={logo_name} alt="Logo Name" className="h-8 w-32 sm:h-8" />
           <span className="text-[9px] sm:text-[10px] text-zinc-500 bg-[#30302e] px-1.5 sm:px-2 py-0.5 rounded-full hidden sm:inline">
             UI Generator
           </span>
@@ -283,8 +281,8 @@ export default function MainApp() {
             </span>
           )}
           {isLoading && (
-            <span className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] text-indigo-400">
-              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-indigo-400 rounded-full animate-pulse-dot" />
+            <span className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] text-[#a5d5d5]">
+              <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 bg-[#a5d5d5] rounded-full animate-pulse-dot" />
               <span className="hidden xs:inline">Processing</span>
             </span>
           )}
@@ -330,7 +328,7 @@ export default function MainApp() {
           <>
             {/* Drag Handle */}
             <div
-              className="w-[5px] shrink-0 bg-transparent hover:bg-indigo-500/30 active:bg-indigo-500/50 cursor-col-resize transition-colors relative group"
+              className="w-[5px] shrink-0 bg-transparent hover:bg-[#a5d5d5]/30 active:bg-[#a5d5d5]/50 cursor-col-resize transition-colors relative group"
               onMouseDown={(e) => {
                 e.preventDefault();
                 isDragging.current = true;
@@ -339,7 +337,7 @@ export default function MainApp() {
               }}
             >
               <div className="absolute inset-y-0 -left-[2px] -right-[2px]" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-zinc-600 group-hover:bg-indigo-400 transition-colors" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-8 rounded-full bg-zinc-600 group-hover:bg-[#a5d5d5] transition-colors" />
             </div>
 
             {/* Artifact Panel */}

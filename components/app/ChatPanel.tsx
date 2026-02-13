@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, AgentStep } from "@/lib/types";
 import { BrainCog, Pencil, Copy, Check } from "lucide-react";
-
+import logo from "@/images/logo.png"
+import Image from "next/image";
 interface ChatPanelProps {
   messages: ChatMessage[];
   onSend: (message: string, proMode?: boolean) => void;
@@ -18,6 +19,7 @@ interface ChatPanelProps {
   proMode: boolean;
   onProModeToggle: (value: boolean) => void;
 }
+
 
 const SUGGESTIONS = [
   { label: "Login Form", prompt: "Create a login form with email and password inputs" },
@@ -86,9 +88,7 @@ export default function ChatPanel({
         <div className="flex-1 flex items-center justify-center px-4">
           <div className={`text-center w-full mx-auto transform -translate-y-6 ${hasArtifact ? "max-w-lg" : "max-w-2xl"}`}>
             <div className="inline-flex mb-6">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-500 flex items-center justify-center text-white text-xl sm:text-2xl font-bold shadow-lg shadow-indigo-500/20">
-                R
-              </div>
+              <Image src={logo} alt="Logo" className="w-10 h-10 sm:w-12 sm:h-12 mr-2" />
             </div>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-white mb-2">
               What would you like to build?
@@ -98,7 +98,7 @@ export default function ChatPanel({
             </p>
 
             <div className="relative mb-6">
-              <div className="bg-[#30302e] rounded-2xl border border-[#3f3f3a] focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/25 transition-all">
+              <div className="bg-[#30302e] rounded-2xl border border-[#3f3f3a] focus-within:border-[#a5d5d5]/50 focus-within:ring-1 focus-within:ring-[#a5d5d5]/25 transition-all">
                 <textarea
                   ref={textareaRef}
                   className="w-full bg-transparent text-white placeholder:text-zinc-500 px-4 sm:px-5 pt-4 pb-14 text-sm sm:text-base outline-none resize-none min-h-[56px] max-h-[200px]"
@@ -113,7 +113,7 @@ export default function ChatPanel({
                     onClick={() => onProModeToggle(!proMode)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       proMode
-                        ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                        ? "bg-[#a5d5d5]/20 text-[#a5d5d5] border border-[#a5d5d5]/30"
                         : "bg-zinc-700/50 text-zinc-400 border border-zinc-600/30 hover:bg-zinc-700 hover:text-zinc-300"
                     }`}
                     title={proMode ? "Pro mode enabled - Better designs with AI creativity" : "Enable Pro mode for better designs"}
@@ -124,7 +124,7 @@ export default function ChatPanel({
                   <button
                     onClick={() => handleSubmit()}
                     disabled={!input.trim() || isLoading}
-                    className="w-9 h-9 rounded-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
+                    className="w-9 h-9 rounded-full bg-[#a5d5d5] hover:bg-[#92c9c9] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
                   >
                     <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
@@ -168,8 +168,8 @@ export default function ChatPanel({
               {isLoading && !currentStep && (
                 <div className="animate-slide-up">
                   <div className="flex items-center gap-2.5">
-                    <div className="shrink-0 w-8 h-8 rounded-full bg-indigo-500/15 border-[1.5px] border-indigo-500/25 flex items-center justify-center">
-                      <span className="w-3.5 h-3.5 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-[#a5d5d5]/15 border-[1.5px] border-[#a5d5d5]/25 flex items-center justify-center">
+                      <span className="w-3.5 h-3.5 border-2 border-[#a5d5d5]/30 border-t-[#a5d5d5] rounded-full animate-spin" />
                     </div>
                     <span className="text-sm text-zinc-500">Thinking...</span>
                   </div>
@@ -194,7 +194,7 @@ export default function ChatPanel({
           {/* ═══ Bottom Input ═══ */}
           <div className="shrink-0 pb-3 sm:pb-4 pt-2 bg-[#262624]">
             <div className={`mx-auto px-4 sm:px-6 ${hasArtifact ? "max-w-xl" : "max-w-3xl"}`}>
-              <div className="bg-[#30302e] rounded-2xl border border-[#3f3f3a] focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/25 transition-all relative">
+              <div className="bg-[#30302e] rounded-2xl border border-[#3f3f3a] focus-within:border-[#a5d5d5]/50 focus-within:ring-1 focus-within:ring-[#a5d5d5]/25 transition-all relative">
                 <textarea
                   ref={textareaRef}
                   className="w-full bg-transparent text-white placeholder:text-zinc-500 px-4 pt-3 pb-12 text-sm outline-none resize-none min-h-[44px] max-h-[200px]"
@@ -211,7 +211,7 @@ export default function ChatPanel({
                     disabled={isLoading}
                     className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer disabled:opacity-50 ${
                       proMode
-                        ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                        ? "bg-[#a5d5d5]/20 text-[#a5d5d5] border border-[#a5d5d5]/30"
                         : "bg-zinc-700/50 text-zinc-400 border border-zinc-600/30 hover:bg-zinc-700 hover:text-zinc-300"
                     }`}
                     title={proMode ? "Pro mode enabled - Better designs with AI creativity" : "Enable Pro mode for better designs"}
@@ -233,7 +233,7 @@ export default function ChatPanel({
                     <button
                       onClick={() => handleSubmit()}
                       disabled={!input.trim()}
-                      className="w-8 h-8 rounded-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-full bg-[#a5d5d5] hover:bg-[#92c9c9] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
                     >
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" />
@@ -335,7 +335,7 @@ function MessageBubble({
       return (
         <div className="flex justify-end animate-slide-up">
           <div className="max-w-[85%] w-full sm:w-auto">
-            <div className="bg-[#30302e] rounded-2xl rounded-tr-sm border border-indigo-500/30">
+            <div className="bg-[#30302e] rounded-2xl rounded-tr-sm border border-[#a5d5d5]/30">
               <textarea
                 ref={editTextareaRef}
                 className="w-full bg-transparent text-zinc-200 px-4 py-3 text-sm outline-none resize-none min-h-[44px]"
@@ -365,7 +365,7 @@ function MessageBubble({
                 <button
                   onClick={handleEditSubmit}
                   disabled={!editValue.trim() || editValue === content}
-                  className="px-3 py-1 text-xs text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-xs text-white bg-[#a5d5d5] hover:bg-[#92c9c9] rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Submit
                 </button>
@@ -404,13 +404,13 @@ function MessageBubble({
   if (messageType === "plan") {
     return (
       <div className="flex items-start gap-2 sm:gap-3 animate-slide-up">
-        <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-500/15 border-[1.5px] border-indigo-500/25 flex items-center justify-center text-xs sm:text-sm">
+        <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#a5d5d5]/15 border-[1.5px] border-[#a5d5d5]/25 flex items-center justify-center text-xs sm:text-sm">
           🧠
         </div>
         <div className="flex-1 max-w-[85%]">
-          <div className="bg-indigo-500/[0.07] border border-indigo-500/15 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3">
-            <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">Plan</span>
-            <p className="text-xs sm:text-[13px] text-indigo-200/70 mt-1 m-0 leading-relaxed">{content}</p>
+          <div className="bg-[#a5d5d5]/[0.07] border border-[#a5d5d5]/15 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3">
+            <span className="text-[10px] font-semibold text-[#a5d5d5] uppercase tracking-wider">Plan</span>
+            <p className="text-xs sm:text-[13px] text-[#a5d5d5]/70 mt-1 m-0 leading-relaxed">{content}</p>
           </div>
         </div>
       </div>
@@ -466,7 +466,7 @@ function MessageBubble({
                 <span className="text-xs sm:text-[13px] font-medium text-zinc-200 block">Generated UI</span>
                 <span className="text-[10px] sm:text-[11px] text-zinc-500">Version {artifactVersion} &middot; Click to preview</span>
               </div>
-              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-600 group-hover/card:text-indigo-400 transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-600 group-hover/card:text-[#a5d5d5] transition-colors" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
               </svg>
             </div>
@@ -479,9 +479,7 @@ function MessageBubble({
   /* ── Default assistant text ── */
   return (
     <div className="flex items-start gap-2 sm:gap-3 animate-slide-up group">
-      <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-500/15 border-[1.5px] border-emerald-500/25 flex items-center justify-center">
-        <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400">AI</span>
-      </div>
+      <Image src={logo} alt="Logo" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full   flex items-center justify-center text-xs sm:text-sm" />
       <div className="flex-1 max-w-[85%]">
         <div className="text-xs sm:text-[13px] text-zinc-300 leading-relaxed pt-1.5">
           {content}
@@ -554,7 +552,7 @@ function StepProgress({
                 status === "done"
                   ? "bg-emerald-500/15 border-[1.5px] border-emerald-500/30"
                   : status === "active"
-                    ? "bg-indigo-500/15 border-[1.5px] border-indigo-500/40"
+                    ? "bg-[#a5d5d5]/15 border-[1.5px] border-[#a5d5d5]/40"
                     : "bg-zinc-800/50 border-[1.5px] border-zinc-700/30"
               }`}
             >
@@ -563,7 +561,7 @@ function StepProgress({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               ) : status === "active" ? (
-                <span className="w-4 h-4 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-[#a5d5d5]/30 border-t-[#a5d5d5] rounded-full animate-spin" />
               ) : (
                 <span className="text-xs opacity-40">{step.icon}</span>
               )}
@@ -576,7 +574,7 @@ function StepProgress({
                   status === "done"
                     ? "text-emerald-400/80"
                     : status === "active"
-                      ? "text-indigo-300"
+                      ? "text-[#a5d5d5]"
                       : "text-zinc-600"
                 }`}
               >

@@ -29,13 +29,14 @@ export default function Sidebar({ items = [], title, theme = "light" }: SidebarP
             className={`flex items-center gap-3 px-3 py-2.5 text-sm no-underline cursor-pointer rounded-lg transition-all ${
               item.active
                 ? isDark
-                  ? "bg-indigo-500/15 text-indigo-400 font-medium"
-                  : "bg-indigo-50 text-indigo-600 font-medium"
+                  ? "font-medium"
+                  : "font-medium"
                 : isDark
                   ? "text-gray-400 hover:bg-gray-800 hover:text-gray-200"
                   : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
             }`}
             href="#"
+            style={item.active ? { backgroundColor: isDark ? 'rgba(165,213,213,0.12)' : '#eaf8f7', color: '#a5d5d5' } : undefined}
           >
             {item.icon && <span className="text-base w-5 text-center opacity-70">{item.icon}</span>}
             {item.text}

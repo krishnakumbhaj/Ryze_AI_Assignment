@@ -10,17 +10,17 @@ interface ButtonProps {
 }
 
 const VARIANT_LIGHT = {
-  primary: "bg-indigo-500 text-white hover:bg-indigo-600 shadow-sm shadow-indigo-500/25",
+  primary: "bg-[#a5d5d5] text-white hover:bg-[#92c9c9] shadow-sm",
   secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200",
-  danger: "bg-red-500 text-white hover:bg-red-600 shadow-sm shadow-red-500/25",
-  ghost: "bg-transparent text-indigo-600 hover:bg-indigo-50",
+  danger: "bg-red-500 text-white hover:bg-red-600 shadow-sm",
+  ghost: "bg-transparent text-[#a5d5d5] hover:bg-[#f0f8f7]",
 };
 
 const VARIANT_DARK = {
-  primary: "bg-indigo-500 text-white hover:bg-indigo-400 shadow-md shadow-indigo-500/30",
+  primary: "bg-[#a5d5d5] text-white hover:bg-[#92c9c9] shadow-md",
   secondary: "bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600",
-  danger: "bg-red-500 text-white hover:bg-red-400 shadow-md shadow-red-500/30",
-  ghost: "bg-transparent text-indigo-400 hover:bg-gray-800",
+  danger: "bg-red-500 text-white hover:bg-red-400 shadow-md",
+  ghost: "bg-transparent text-[#a5d5d5] hover:bg-gray-800",
 };
 
 const SIZE = {

@@ -79,7 +79,7 @@ export default function ArtifactPanel({
               onClick={togglePreviewTheme}
               className={`p-1 sm:p-1.5 rounded-md transition-colors cursor-pointer ${
                 previewTheme === "dark"
-                  ? "bg-indigo-500/20 text-indigo-400"
+                  ? "bg-[#a5d5d5]/20 text-[#a5d5d5]"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-[#30302e]"
               }`}
               title={`Switch to ${previewTheme === "light" ? "dark" : "light"} theme`}
@@ -95,7 +95,7 @@ export default function ArtifactPanel({
           {/* Version selector */}
           {totalVersions > 0 && (
             <select
-              className="bg-[#30302e] border border-[#3f3f3a] rounded-md px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs text-zinc-400 outline-none cursor-pointer focus:border-indigo-500/50"
+              className="bg-[#30302e] border border-[#3f3f3a] rounded-md px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs text-zinc-400 outline-none cursor-pointer focus:border-[#a5d5d5]/50"
               value={currentVersion || ""}
               onChange={(e) => onVersionChange(Number(e.target.value))}
               disabled={isLoading}
