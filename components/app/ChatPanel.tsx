@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { ChatMessage, AgentStep } from "@/lib/types";
-import { BrainCog, Pencil, Copy, Check } from "lucide-react";
+import { Pencil, Copy, Check } from "lucide-react";
 import logo from "@/images/logo.png"
 import Image from "next/image";
 interface ChatPanelProps {
@@ -41,7 +41,7 @@ export default function ChatPanel({
   onOpenArtifact,
   onEditMessage,
   proMode,
-  onProModeToggle,
+  // onProModeToggle,
   streamingExplanation,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
@@ -110,7 +110,7 @@ export default function ChatPanel({
                   onKeyDown={handleKeyDown}
                   rows={1}
                 />
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                <div className="absolute bottom-3  right-3 flex items-center justify-between">
                   {/* <button
                     onClick={() => onProModeToggle(!proMode)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
