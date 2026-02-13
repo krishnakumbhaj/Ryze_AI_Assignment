@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import ChatPanel from "./ChatPanel";
 import ArtifactPanel from "./ArtifactPanel";
 import { ChatMessage, AgentStep, ComponentNode, SSEEvent } from "@/lib/types";
+import { treeToCode } from "@/lib/codeGenerator";
 import logo from "@/images/logo.png"
 import logo_name from "@/images/logo_name.png"
 import Image from "next/image";
@@ -12,7 +13,6 @@ import { Trash2 } from "lucide-react";
 // ── LocalStorage helpers ──
 const STORAGE_KEYS = {
   messages: "ryze_messages",
-  code: "ryze_code",
   tree: "ryze_tree",
   currentVersion: "ryze_currentVersion",
   totalVersions: "ryze_totalVersions",
@@ -55,11 +55,15 @@ export default function MainApp() {
   const [proMode, setProMode] = useState(false);
 
   // Artifacts
-  const [code, setCode] = useState("");
   const [tree, setTree] = useState<ComponentNode | null>(null);
   const [showArtifact, setShowArtifact] = useState(false);
-  const [artifactTab, setArtifactTab] = useState<"preview" | "code">("preview");
   const [streamingExplanation, setStreamingExplanation] = useState("");
+
+  // Code derived from AST (client-side)
+  const [code, setCode] = useState("");
+  const [isCodeStreaming, setIsCodeStreaming] = useState(false);
+  const [artifactTab, setArtifactTab] = useState<"preview" | "code">("preview");
+  const codeStreamRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Versions
   const [totalVersions, setTotalVersions] = useState(0);
@@ -80,6 +84,48 @@ export default function MainApp() {
   const treeRef = useRef<ComponentNode | null>(null);
   const proModeRef = useRef(false);
 
+  // ── Typewriter effect: stream React code from AST client-side ──
+  // Shows code tab while streaming, then auto-switches to preview when done.
+  const streamCodeFromTree = useCallback((newTree: ComponentNode) => {
+    // Cancel any in-progress streaming
+    if (codeStreamRef.current) {
+      clearInterval(codeStreamRef.current);
+      codeStreamRef.current = null;
+    }
+
+    const fullCode = treeToCode(newTree);
+    let charIndex = 0;
+    setCode("");
+    setIsCodeStreaming(true);
+    setArtifactTab("code"); // show code tab while streaming
+
+    // Stream ~8 chars per tick at 12ms interval ≈ fast typewriter
+    const CHARS_PER_TICK = 8;
+    const TICK_MS = 12;
+
+    codeStreamRef.current = setInterval(() => {
+      charIndex += CHARS_PER_TICK;
+      if (charIndex >= fullCode.length) {
+        setCode(fullCode);
+        setIsCodeStreaming(false);
+        setArtifactTab("preview"); // flip to preview once code is fully streamed
+        if (codeStreamRef.current) {
+          clearInterval(codeStreamRef.current);
+          codeStreamRef.current = null;
+        }
+      } else {
+        setCode(fullCode.slice(0, charIndex));
+      }
+    }, TICK_MS);
+  }, []);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (codeStreamRef.current) clearInterval(codeStreamRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     treeRef.current = tree;
   }, [tree]);
@@ -91,8 +137,9 @@ export default function MainApp() {
   // ── Hydrate state from localStorage on mount ──
   useEffect(() => {
     setMessages(loadFromStorage<ChatMessage[]>(STORAGE_KEYS.messages, []));
-    setCode(loadFromStorage<string>(STORAGE_KEYS.code, ""));
-    setTree(loadFromStorage<ComponentNode | null>(STORAGE_KEYS.tree, null));
+    const savedTree = loadFromStorage<ComponentNode | null>(STORAGE_KEYS.tree, null);
+    setTree(savedTree);
+    if (savedTree) setCode(treeToCode(savedTree));
     setCurrentVersion(loadFromStorage<number | null>(STORAGE_KEYS.currentVersion, null));
     setTotalVersions(loadFromStorage<number>(STORAGE_KEYS.totalVersions, 0));
     setShowArtifact(loadFromStorage<boolean>(STORAGE_KEYS.showArtifact, false));
@@ -105,11 +152,6 @@ export default function MainApp() {
     if (!hydrated) return;
     saveToStorage(STORAGE_KEYS.messages, messages);
   }, [messages, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    saveToStorage(STORAGE_KEYS.code, code);
-  }, [code, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -262,9 +304,7 @@ export default function MainApp() {
 
             // Open artifact panel as soon as generating begins (before LLM returns)
             if (evt.step === "generating") {
-              setCode("");
               setShowArtifact(true);
-              setArtifactTab("code");
               setMobileShowArtifact(true);
             }
 
@@ -275,19 +315,13 @@ export default function MainApp() {
               appendMessage("assistant", intent, "plan");
             }
 
-            // Code chunk streaming → append code line by line
-            if (evt.codeChunk) {
-              setCode(prev => prev + evt.codeChunk);
-            }
-
-            // Full code (final event backup)
-            if (evt.code) {
-              setCode(evt.code);
-            }
-
-            // Component tree
+            // Component tree → trigger code streaming only on first arrival
             if (evt.componentTree) {
+              const isNewTree = !treeRef.current;
               setTree(evt.componentTree);
+              if (isNewTree || evt.step === "generate_complete") {
+                streamCodeFromTree(evt.componentTree);
+              }
             }
 
             // Explanation chunk streaming → build up explanation in chat
@@ -300,7 +334,6 @@ export default function MainApp() {
               setStreamingExplanation("");
               appendMessage("assistant", evt.explanation, "artifact", evt.version);
               setShowArtifact(true);
-              setArtifactTab("preview");
             } else if (evt.explanation) {
               setStreamingExplanation("");
               appendMessage("assistant", evt.explanation);
@@ -331,7 +364,7 @@ export default function MainApp() {
         controllerRef.current = null;
       }
     },
-    [appendMessage, fetchVersionCount]
+    [appendMessage, fetchVersionCount, streamCodeFromTree]
   );
 
   const handleRegenerate = useCallback(async () => {
@@ -343,10 +376,15 @@ export default function MainApp() {
       const res = await fetch(`/api/versions?version=${v}`);
       if (!res.ok) return;
       const data = await res.json();
-      setTree(data.componentTree || null);
-      setCode(data.code || "");
+      const vTree = data.componentTree || null;
+      setTree(vTree);
       setCurrentVersion(data.version || null);
       setShowArtifact(true);
+      // Instantly show full code for version switches (no streaming)
+      if (vTree) {
+        setCode(treeToCode(vTree));
+        setIsCodeStreaming(false);
+      }
     } catch {
       /* ignore */
     }
@@ -377,7 +415,6 @@ export default function MainApp() {
   const handleClearHistory = useCallback(async () => {
     // Clear client state
     setMessages([]);
-    setCode("");
     setTree(null);
     setShowArtifact(false);
     setMobileShowArtifact(false);
@@ -387,7 +424,10 @@ export default function MainApp() {
     setStepMessage("");
     setPlanIntent("");
     setStreamingExplanation("");
+    setCode("");
+    setIsCodeStreaming(false);
     setArtifactTab("preview");
+    if (codeStreamRef.current) { clearInterval(codeStreamRef.current); codeStreamRef.current = null; }
     // Clear localStorage
     clearAllStorage();
     // Clear server-side version store
@@ -500,7 +540,7 @@ export default function MainApp() {
                 onRegenerate={handleRegenerate}
                 onClose={() => setShowArtifact(false)}
                 isLoading={isLoading}
-                onCodeChange={setCode}
+                isCodeStreaming={isCodeStreaming}
               />
             </div>
           </>
@@ -550,7 +590,7 @@ export default function MainApp() {
               onRegenerate={handleRegenerate}
               onClose={() => setMobileShowArtifact(false)}
               isLoading={isLoading}
-              onCodeChange={setCode}
+              isCodeStreaming={isCodeStreaming}
             />
           )}
         </div>

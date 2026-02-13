@@ -3,16 +3,13 @@ import { runPlanner } from "@/lib/planner";
 import { runGenerator } from "@/lib/generator";
 import { runExplainer } from "@/lib/explainer";
 import { runExplainerStream } from "@/lib/explainer";
-import { treeToCode } from "@/lib/codeGenerator";
 import { addVersion, getLatestVersion } from "@/lib/versionStore";
-import { callGemini, extractJSON } from "@/lib/gemini";
+import { invokeModel, extractJSON } from "@/lib/langchain";
 import { getIntentClassifierPrompt } from "@/lib/prompts";
 import { GenerateRequest, SSEEvent } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function sendSSE(
   controller: ReadableStreamDefaultController,
@@ -42,8 +39,9 @@ export async function POST(request: NextRequest) {
         const prevTree =
           previousTree || getLatestVersion()?.componentTree || null;
 
-        // Step 0: Intent Classification
-        const classifierResult = await callGemini(
+        // Step 0: Intent Classification via LangChain
+        const classifierResult = await invokeModel(
+          "You are Ryze AI, a deterministic UI generator. Classify user intent as JSON.",
           getIntentClassifierPrompt(message, !!prevTree)
         );
         let intent: { type: string; response?: string };
@@ -72,34 +70,24 @@ export async function POST(request: NextRequest) {
 
         sendSSE(controller, encoder, {
           step: "plan_complete",
-          message: "Plan created. Generating components...",
+          message: "Plan created. Generating AST...",
           plan,
         });
 
-        // Step 2: Generator
+        // Step 2: Generator — produces AST (no code)
         sendSSE(controller, encoder, {
           step: "generating",
-          message: "Generating UI components from the plan...",
+          message: "Generating UI AST from the plan...",
         });
 
         const componentTree = await runGenerator(plan, prevTree, proMode);
-        const code = treeToCode(componentTree);
 
-        // Send component tree immediately so preview works right away
+        // Send AST immediately so preview renders right away
         sendSSE(controller, encoder, {
           step: "generate_complete",
-          message: "UI generated. Streaming code...",
+          message: "AST generated. Preparing explanation...",
           componentTree,
         });
-
-        // Stream code line-by-line for visible typewriter effect
-        const codeLines = code.split("\n");
-        for (let i = 0; i < codeLines.length; i++) {
-          const line = codeLines[i];
-          const suffix = i < codeLines.length - 1 ? "\n" : "";
-          sendSSE(controller, encoder, { codeChunk: line + suffix });
-          await sleep(50); // 50ms per line — slow enough to see streaming
-        }
 
         // Step 3: Stream explanation token-by-token
         sendSSE(controller, encoder, {
@@ -125,13 +113,12 @@ export async function POST(request: NextRequest) {
           sendSSE(controller, encoder, { explanationChunk: fullExplanation });
         }
 
-        // Save version
-        const version = addVersion(componentTree, code, fullExplanation);
+        // Save version (no code — only AST + explanation)
+        const version = addVersion(componentTree, fullExplanation);
 
         // Send final result with all data
         sendSSE(controller, encoder, {
           step: "complete",
-          code,
           explanation: fullExplanation,
           version: version.version,
           componentTree,

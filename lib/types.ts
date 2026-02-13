@@ -26,7 +26,6 @@ export interface PlanOutput {
 export interface Version {
   version: number;
   componentTree: ComponentNode;
-  code: string;
   explanation: string;
   timestamp: number;
 }
@@ -55,8 +54,6 @@ export interface SSEEvent {
   step?: AgentStep;
   message?: string;
   plan?: PlanOutput;
-  code?: string;
-  codeChunk?: string;
   explanation?: string;
   explanationChunk?: string;
   version?: number;

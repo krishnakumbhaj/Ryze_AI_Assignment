@@ -1,5 +1,5 @@
 import { ComponentNode, PlanOutput } from "./types";
-import { callGemini, callGeminiStream } from "./gemini";
+import { invokeModel, streamModel } from "./langchain";
 import { getExplainerPrompt } from "./prompts";
 
 export async function runExplainer(
@@ -14,7 +14,10 @@ export async function runExplainer(
   const newTreeStr = JSON.stringify(newTree, null, 2);
 
   const prompt = getExplainerPrompt(planStr, previousTreeStr, newTreeStr);
-  const rawResponse = await callGemini(prompt);
+  const rawResponse = await invokeModel(
+    "You are a concise UI explainer. Respond in plain text, not JSON.",
+    prompt
+  );
 
   // The explainer returns plain text, not JSON
   // Strip any markdown formatting if present
@@ -37,5 +40,8 @@ export async function* runExplainerStream(
   const newTreeStr = JSON.stringify(newTree, null, 2);
 
   const prompt = getExplainerPrompt(planStr, previousTreeStr, newTreeStr);
-  yield* callGeminiStream(prompt);
+  yield* streamModel(
+    "You are a concise UI explainer. Respond in plain text, not JSON.",
+    prompt
+  );
 }

@@ -1,5 +1,5 @@
 import { ComponentNode, PlanOutput } from "./types";
-import { callGemini, extractJSON } from "./gemini";
+import { invokeModel, extractJSON } from "./langchain";
 import { getPlannerPrompt } from "./prompts";
 import { validatePlanOutput } from "./validation";
 
@@ -13,7 +13,10 @@ export async function runPlanner(
     : null;
 
   const prompt = getPlannerPrompt(userMessage, previousTreeStr, proMode);
-  const rawResponse = await callGemini(prompt);
+  const rawResponse = await invokeModel(
+    "You are a deterministic UI planner. You ONLY output valid JSON.",
+    prompt
+  );
   const jsonStr = extractJSON(rawResponse);
 
   let plan: PlanOutput;

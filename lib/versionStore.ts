@@ -5,13 +5,11 @@ let versions: Version[] = [];
 
 export function addVersion(
   componentTree: ComponentNode,
-  code: string,
   explanation: string
 ): Version {
   const version: Version = {
     version: versions.length + 1,
     componentTree,
-    code,
     explanation,
     timestamp: Date.now(),
   };

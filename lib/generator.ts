@@ -1,5 +1,5 @@
 import { ComponentNode, PlanOutput } from "./types";
-import { callGemini, extractJSON } from "./gemini";
+import { invokeModel, extractJSON } from "./langchain";
 import { getGeneratorPrompt } from "./prompts";
 import { validateComponentTree } from "./validation";
 
@@ -14,7 +14,10 @@ export async function runGenerator(
     : null;
 
   const prompt = getGeneratorPrompt(planStr, previousTreeStr, proMode);
-  const rawResponse = await callGemini(prompt);
+  const rawResponse = await invokeModel(
+    "You are a deterministic UI AST generator. You ONLY output valid JSON AST — never code.",
+    prompt
+  );
   const jsonStr = extractJSON(rawResponse);
 
   let tree: unknown;
@@ -30,11 +33,11 @@ export async function runGenerator(
   const validation = validateComponentTree(tree);
 
   if (validation.errors.length > 0) {
-    console.warn("Component tree validation warnings:", validation.errors);
+    console.warn("AST validation warnings:", validation.errors);
   }
 
   if (!validation.sanitizedTree) {
-    throw new Error("Generator produced an invalid component tree");
+    throw new Error("Generator produced an invalid AST");
   }
 
   return validation.sanitizedTree;
