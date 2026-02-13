@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { runPlanner } from "@/lib/planner";
 import { runGenerator } from "@/lib/generator";
 import { runExplainer } from "@/lib/explainer";
+import { runExplainerStream } from "@/lib/explainer";
 import { treeToCode } from "@/lib/codeGenerator";
 import { addVersion, getLatestVersion } from "@/lib/versionStore";
 import { callGemini, extractJSON } from "@/lib/gemini";
@@ -10,6 +11,8 @@ import { GenerateRequest, SSEEvent } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function sendSSE(
   controller: ReadableStreamDefaultController,
@@ -82,27 +85,54 @@ export async function POST(request: NextRequest) {
         const componentTree = await runGenerator(plan, prevTree, proMode);
         const code = treeToCode(componentTree);
 
+        // Send component tree immediately so preview works right away
         sendSSE(controller, encoder, {
           step: "generate_complete",
-          message: "UI generated. Preparing explanation...",
+          message: "UI generated. Streaming code...",
+          componentTree,
         });
 
-        // Step 3: Explainer
+        // Stream code line-by-line for visible typewriter effect
+        const codeLines = code.split("\n");
+        for (let i = 0; i < codeLines.length; i++) {
+          const line = codeLines[i];
+          const suffix = i < codeLines.length - 1 ? "\n" : "";
+          sendSSE(controller, encoder, { codeChunk: line + suffix });
+          await sleep(50); // 50ms per line — slow enough to see streaming
+        }
+
+        // Step 3: Stream explanation token-by-token
         sendSSE(controller, encoder, {
           step: "explaining",
           message: "Explaining the design decisions...",
         });
 
-        const explanation = await runExplainer(plan, prevTree, componentTree);
+        let fullExplanation = "";
+        try {
+          for await (const chunk of runExplainerStream(plan, prevTree, componentTree)) {
+            fullExplanation += chunk;
+            sendSSE(controller, encoder, { explanationChunk: chunk });
+          }
+          // Clean up markdown formatting
+          fullExplanation = fullExplanation
+            .replace(/^```\w*\n?/, "")
+            .replace(/\n?```$/, "")
+            .trim();
+        } catch (streamError) {
+          // Fallback to non-streaming explainer
+          console.warn("Streaming explainer failed, falling back:", streamError);
+          fullExplanation = await runExplainer(plan, prevTree, componentTree);
+          sendSSE(controller, encoder, { explanationChunk: fullExplanation });
+        }
 
         // Save version
-        const version = addVersion(componentTree, code, explanation);
+        const version = addVersion(componentTree, code, fullExplanation);
 
-        // Send final result
+        // Send final result with all data
         sendSSE(controller, encoder, {
           step: "complete",
           code,
-          explanation,
+          explanation: fullExplanation,
           version: version.version,
           componentTree,
         });

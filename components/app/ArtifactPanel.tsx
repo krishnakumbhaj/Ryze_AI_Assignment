@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ComponentNode } from "@/lib/types";
 import PreviewRenderer from "./PreviewRenderer";
 import { Sun, Moon } from "lucide-react";
@@ -16,6 +16,7 @@ interface ArtifactPanelProps {
   onRegenerate: () => void;
   onClose: () => void;
   isLoading: boolean;
+  onCodeChange?: (code: string) => void;
 }
 
 export default function ArtifactPanel({
@@ -29,9 +30,18 @@ export default function ArtifactPanel({
   onRegenerate,
   onClose,
   isLoading,
+  onCodeChange,
 }: ArtifactPanelProps) {
   const [copied, setCopied] = useState(false);
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light");
+  const codeScrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll code view during streaming
+  useEffect(() => {
+    if (isLoading && codeScrollRef.current && activeTab === "code") {
+      codeScrollRef.current.scrollTop = codeScrollRef.current.scrollHeight;
+    }
+  }, [code, isLoading, activeTab]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -146,7 +156,7 @@ export default function ArtifactPanel({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto min-h-0">
+      <div className="flex-1 overflow-auto min-h-0" ref={activeTab === "code" ? codeScrollRef : undefined}>
         {activeTab === "preview" ? (
           <div className={`h-full rounded-b-none transition-colors ${
             previewTheme === "dark" ? "bg-gray-900" : "bg-white"
@@ -154,11 +164,36 @@ export default function ArtifactPanel({
             <PreviewRenderer tree={tree} theme={previewTheme} />
           </div>
         ) : (
-          <div className="p-3 sm:p-4">
-            {code ? (
-              <pre className="text-[11px] sm:text-[13px] leading-relaxed font-mono text-zinc-300 whitespace-pre-wrap break-words m-0">
-                <code>{code}</code>
-              </pre>
+          <div className="p-3 sm:p-4 h-full">
+            {isLoading && !code ? (
+              /* Waiting for code — show generating animation */
+              <div className="flex flex-col items-center justify-center h-64 text-center gap-4 animate-fade-in">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl bg-[#a5d5d5]/10 border border-[#a5d5d5]/20 flex items-center justify-center">
+                    <span className="w-5 h-5 border-2 border-[#a5d5d5]/30 border-t-[#a5d5d5] rounded-full animate-spin" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-400 font-medium">Generating UI code...</p>
+                  <p className="text-xs text-zinc-600 mt-1">Components are being assembled</p>
+                </div>
+              </div>
+            ) : code ? (
+              isLoading ? (
+                /* Streaming view — code builds up line by line with cursor */
+                <pre className="text-[11px] sm:text-[13px] leading-relaxed font-mono text-zinc-300 whitespace-pre-wrap break-words m-0">
+                  <code>{code}</code>
+                  <span className="inline-block w-[6px] h-[15px] bg-[#a5d5d5] rounded-sm animate-pulse align-middle ml-0.5" />
+                </pre>
+              ) : (
+                /* Editable code view — user can modify after generation */
+                <textarea
+                  className="w-full h-full min-h-[400px] bg-transparent text-[11px] sm:text-[13px] leading-relaxed font-mono text-zinc-300 outline-none resize-none whitespace-pre m-0 p-0 border-none"
+                  value={code}
+                  onChange={(e) => onCodeChange?.(e.target.value)}
+                  spellCheck={false}
+                />
+              )
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
                 <div className="text-3xl opacity-30">📝</div>

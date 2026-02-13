@@ -7,6 +7,42 @@ import { ChatMessage, AgentStep, ComponentNode, SSEEvent } from "@/lib/types";
 import logo from "@/images/logo.png"
 import logo_name from "@/images/logo_name.png"
 import Image from "next/image";
+import { Trash2 } from "lucide-react";
+
+// ── LocalStorage helpers ──
+const STORAGE_KEYS = {
+  messages: "ryze_messages",
+  code: "ryze_code",
+  tree: "ryze_tree",
+  currentVersion: "ryze_currentVersion",
+  totalVersions: "ryze_totalVersions",
+  showArtifact: "ryze_showArtifact",
+  proMode: "ryze_proMode",
+} as const;
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToStorage(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch { /* quota exceeded — ignore */ }
+}
+
+function clearAllStorage() {
+  Object.values(STORAGE_KEYS).forEach((key) => {
+    try { localStorage.removeItem(key); } catch { /* ignore */ }
+  });
+}
+
 export default function MainApp() {
   // Messages & loading
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -23,10 +59,14 @@ export default function MainApp() {
   const [tree, setTree] = useState<ComponentNode | null>(null);
   const [showArtifact, setShowArtifact] = useState(false);
   const [artifactTab, setArtifactTab] = useState<"preview" | "code">("preview");
+  const [streamingExplanation, setStreamingExplanation] = useState("");
 
   // Versions
   const [totalVersions, setTotalVersions] = useState(0);
   const [currentVersion, setCurrentVersion] = useState<number | null>(null);
+
+  // Track if initial hydration from localStorage is done
+  const [hydrated, setHydrated] = useState(false);
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useState(55);
@@ -47,6 +87,54 @@ export default function MainApp() {
   useEffect(() => {
     proModeRef.current = proMode;
   }, [proMode]);
+
+  // ── Hydrate state from localStorage on mount ──
+  useEffect(() => {
+    setMessages(loadFromStorage<ChatMessage[]>(STORAGE_KEYS.messages, []));
+    setCode(loadFromStorage<string>(STORAGE_KEYS.code, ""));
+    setTree(loadFromStorage<ComponentNode | null>(STORAGE_KEYS.tree, null));
+    setCurrentVersion(loadFromStorage<number | null>(STORAGE_KEYS.currentVersion, null));
+    setTotalVersions(loadFromStorage<number>(STORAGE_KEYS.totalVersions, 0));
+    setShowArtifact(loadFromStorage<boolean>(STORAGE_KEYS.showArtifact, false));
+    setProMode(loadFromStorage<boolean>(STORAGE_KEYS.proMode, false));
+    setHydrated(true);
+  }, []);
+
+  // ── Persist to localStorage whenever key state changes (only after hydration) ──
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.messages, messages);
+  }, [messages, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.code, code);
+  }, [code, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.tree, tree);
+  }, [tree, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.currentVersion, currentVersion);
+  }, [currentVersion, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.totalVersions, totalVersions);
+  }, [totalVersions, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.showArtifact, showArtifact);
+  }, [showArtifact, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveToStorage(STORAGE_KEYS.proMode, proMode);
+  }, [proMode, hydrated]);
 
   // ── Resize drag handlers ──
   useEffect(() => {
@@ -108,6 +196,7 @@ export default function MainApp() {
     setIsLoading(false);
     setCurrentStep(null);
     setStepMessage("");
+    setStreamingExplanation("");
     appendMessage("assistant", "Generation cancelled.", "text");
   }, [appendMessage]);
 
@@ -117,9 +206,10 @@ export default function MainApp() {
       const isProMode = useProMode ?? proModeRef.current;
       appendMessage("user", message);
       setIsLoading(true);
-      setCurrentStep(null); // Don't assume pipeline; let SSE drive steps
+      setCurrentStep(null);
       setStepMessage("");
       setPlanIntent("");
+      setStreamingExplanation("");
 
       controllerRef.current?.abort();
       const controller = new AbortController();
@@ -170,6 +260,14 @@ export default function MainApp() {
               if (evt.message) setStepMessage(evt.message);
             }
 
+            // Open artifact panel as soon as generating begins (before LLM returns)
+            if (evt.step === "generating") {
+              setCode("");
+              setShowArtifact(true);
+              setArtifactTab("code");
+              setMobileShowArtifact(true);
+            }
+
             // Plan received → show in chat
             if (evt.plan) {
               const intent = evt.plan.intent || "Analyzing UI structure...";
@@ -177,7 +275,12 @@ export default function MainApp() {
               appendMessage("assistant", intent, "plan");
             }
 
-            // Code received
+            // Code chunk streaming → append code line by line
+            if (evt.codeChunk) {
+              setCode(prev => prev + evt.codeChunk);
+            }
+
+            // Full code (final event backup)
             if (evt.code) {
               setCode(evt.code);
             }
@@ -187,12 +290,19 @@ export default function MainApp() {
               setTree(evt.componentTree);
             }
 
-            // Explanation received → show as artifact card with version
+            // Explanation chunk streaming → build up explanation in chat
+            if (evt.explanationChunk) {
+              setStreamingExplanation(prev => prev + evt.explanationChunk);
+            }
+
+            // Explanation received → finalize as artifact card with version
             if (evt.explanation && evt.version) {
+              setStreamingExplanation("");
               appendMessage("assistant", evt.explanation, "artifact", evt.version);
               setShowArtifact(true);
               setArtifactTab("preview");
             } else if (evt.explanation) {
+              setStreamingExplanation("");
               appendMessage("assistant", evt.explanation);
             }
 
@@ -217,6 +327,7 @@ export default function MainApp() {
       } finally {
         setIsLoading(false);
         setCurrentStep(null);
+        setStreamingExplanation("");
         controllerRef.current = null;
       }
     },
@@ -262,6 +373,27 @@ export default function MainApp() {
     [handleSend]
   );
 
+  // ── Clear history handler ──
+  const handleClearHistory = useCallback(async () => {
+    // Clear client state
+    setMessages([]);
+    setCode("");
+    setTree(null);
+    setShowArtifact(false);
+    setMobileShowArtifact(false);
+    setCurrentVersion(null);
+    setTotalVersions(0);
+    setCurrentStep(null);
+    setStepMessage("");
+    setPlanIntent("");
+    setStreamingExplanation("");
+    setArtifactTab("preview");
+    // Clear localStorage
+    clearAllStorage();
+    // Clear server-side version store
+    try { await fetch("/api/versions", { method: "DELETE" }); } catch { /* ignore */ }
+  }, []);
+
   return (
     <div className="flex flex-col h-screen bg-[#262624] overflow-hidden">
       {/* ═══ Top Bar ═══ */}
@@ -297,6 +429,17 @@ export default function MainApp() {
               Preview
             </button>
           )}
+          {/* Clear History */}
+          {messages.length > 0 && !isLoading && (
+            <button
+              onClick={handleClearHistory}
+              className="flex items-center gap-1.5 text-[10px] sm:text-xs text-zinc-500 hover:text-red-400 bg-[#30302e] hover:bg-red-500/10 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg transition-colors cursor-pointer border border-[#3f3f3a]/50 hover:border-red-500/30"
+              title="Clear chat history"
+            >
+              <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Clear</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -320,6 +463,7 @@ export default function MainApp() {
             onEditMessage={handleEditMessage}
             proMode={proMode}
             onProModeToggle={setProMode}
+            streamingExplanation={streamingExplanation}
           />
         </div>
 
@@ -356,6 +500,7 @@ export default function MainApp() {
                 onRegenerate={handleRegenerate}
                 onClose={() => setShowArtifact(false)}
                 isLoading={isLoading}
+                onCodeChange={setCode}
               />
             </div>
           </>
@@ -383,6 +528,7 @@ export default function MainApp() {
             onEditMessage={handleEditMessage}
             proMode={proMode}
             onProModeToggle={setProMode}
+            streamingExplanation={streamingExplanation}
           />
         </div>
 
@@ -404,6 +550,7 @@ export default function MainApp() {
               onRegenerate={handleRegenerate}
               onClose={() => setMobileShowArtifact(false)}
               isLoading={isLoading}
+              onCodeChange={setCode}
             />
           )}
         </div>

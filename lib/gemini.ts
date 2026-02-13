@@ -173,6 +173,76 @@ export async function callGemini(prompt: string): Promise<string> {
   throw lastError || new Error("Unknown error occurred");
 }
 
+// Streaming Gemini API - yields text chunks as they arrive
+const GEMINI_STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent`;
+
+export async function* callGeminiStream(prompt: string): AsyncGenerator<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables");
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+  try {
+    const response = await fetch(
+      `${GEMINI_STREAM_URL}?alt=sse&key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            topP: 0.8,
+            maxOutputTokens: 8192,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Gemini streaming error (${response.status}): ${errorText}`);
+    }
+
+    if (!response.body) throw new Error("No response body for streaming");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data: ")) continue;
+
+        const jsonStr = trimmed.slice(6);
+        if (jsonStr === "[DONE]") return;
+
+        try {
+          const data = JSON.parse(jsonStr);
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) yield text;
+        } catch {
+          continue;
+        }
+      }
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // Extract JSON from a response that might have markdown code fences
 export function extractJSON(text: string): string {
   // Try to extract from ```json ... ``` blocks

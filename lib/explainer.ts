@@ -1,5 +1,5 @@
 import { ComponentNode, PlanOutput } from "./types";
-import { callGemini } from "./gemini";
+import { callGemini, callGeminiStream } from "./gemini";
 import { getExplainerPrompt } from "./prompts";
 
 export async function runExplainer(
@@ -22,4 +22,20 @@ export async function runExplainer(
     .replace(/^```\w*\n?/, "")
     .replace(/\n?```$/, "")
     .trim();
+}
+
+// Streaming version - yields text chunks as they arrive from the LLM
+export async function* runExplainerStream(
+  plan: PlanOutput,
+  previousTree: ComponentNode | null,
+  newTree: ComponentNode
+): AsyncGenerator<string> {
+  const planStr = JSON.stringify(plan, null, 2);
+  const previousTreeStr = previousTree
+    ? JSON.stringify(previousTree, null, 2)
+    : null;
+  const newTreeStr = JSON.stringify(newTree, null, 2);
+
+  const prompt = getExplainerPrompt(planStr, previousTreeStr, newTreeStr);
+  yield* callGeminiStream(prompt);
 }

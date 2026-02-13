@@ -18,6 +18,7 @@ interface ChatPanelProps {
   onEditMessage?: (index: number, newMessage: string) => void;
   proMode: boolean;
   onProModeToggle: (value: boolean) => void;
+  streamingExplanation?: string;
 }
 
 
@@ -41,6 +42,7 @@ export default function ChatPanel({
   onEditMessage,
   proMode,
   onProModeToggle,
+  streamingExplanation,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,7 +50,7 @@ export default function ChatPanel({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, currentStep]);
+  }, [messages, currentStep, streamingExplanation]);
 
   useEffect(() => {
     const ta = textareaRef.current;
@@ -109,7 +111,7 @@ export default function ChatPanel({
                   rows={1}
                 />
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                  <button
+                  {/* <button
                     onClick={() => onProModeToggle(!proMode)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                       proMode
@@ -120,7 +122,7 @@ export default function ChatPanel({
                   >
                     <BrainCog className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Pro</span>
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => handleSubmit()}
                     disabled={!input.trim() || isLoading}
@@ -187,6 +189,23 @@ export default function ChatPanel({
                 </div>
               )}
 
+              {/* Streaming explanation — shows AI explanation building up word by word */}
+              {streamingExplanation && (
+                <div className="flex items-start gap-2 sm:gap-3 animate-slide-up">
+                  <div className="shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-500/15 border-[1.5px] border-emerald-500/25 flex items-center justify-center">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400">AI</span>
+                  </div>
+                  <div className="flex-1 max-w-[85%]">
+                    <div className="text-xs sm:text-[13px] text-zinc-300 leading-relaxed space-y-1">
+                      {streamingExplanation.split(/(?<=\.)\s+/).map((sentence, i) => (
+                        <p key={i} className="m-0">{sentence}</p>
+                      ))}
+                      <span className="inline-block w-[6px] h-[15px] bg-[#a5d5d5] ml-0.5 rounded-sm animate-pulse align-middle" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -206,7 +225,7 @@ export default function ChatPanel({
                   rows={1}
                 />
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-                  <button
+                  {/* <button
                     onClick={() => onProModeToggle(!proMode)}
                     disabled={isLoading}
                     className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer disabled:opacity-50 ${
@@ -218,7 +237,7 @@ export default function ChatPanel({
                   >
                     <BrainCog className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Pro</span>
-                  </button>
+                  </button> */}
                   {isLoading ? (
                     <button
                       onClick={onCancel}

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getAllVersions, getVersion } from "@/lib/versionStore";
+import { getAllVersions, getVersion, clearVersions } from "@/lib/versionStore";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -25,6 +25,13 @@ export async function GET(request: NextRequest) {
   }));
 
   return new Response(JSON.stringify({ versions }), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export async function DELETE() {
+  clearVersions();
+  return new Response(JSON.stringify({ success: true }), {
     headers: { "Content-Type": "application/json" },
   });
 }

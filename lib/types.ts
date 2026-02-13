@@ -56,7 +56,9 @@ export interface SSEEvent {
   message?: string;
   plan?: PlanOutput;
   code?: string;
+  codeChunk?: string;
   explanation?: string;
+  explanationChunk?: string;
   version?: number;
   componentTree?: ComponentNode;
   error?: string;
