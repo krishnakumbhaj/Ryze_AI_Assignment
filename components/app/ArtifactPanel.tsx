@@ -17,6 +17,7 @@ interface ArtifactPanelProps {
   onClose: () => void;
   isLoading: boolean;
   isCodeStreaming: boolean;
+  onCodeChange?: (newCode: string) => void;
 }
 
 export default function ArtifactPanel({
@@ -31,15 +32,22 @@ export default function ArtifactPanel({
   onClose,
   isLoading,
   isCodeStreaming,
+  onCodeChange,
 }: ArtifactPanelProps) {
   const [copied, setCopied] = useState(false);
   const [previewTheme, setPreviewTheme] = useState<"light" | "dark">("light");
   const codeScrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isEdited, setIsEdited] = useState(false);
 
   // Auto-scroll code view during streaming
   useEffect(() => {
     if (isCodeStreaming && codeScrollRef.current && activeTab === "code") {
       codeScrollRef.current.scrollTop = codeScrollRef.current.scrollHeight;
+    }
+    // Reset edited flag when new code starts streaming
+    if (isCodeStreaming) {
+      setIsEdited(false);
     }
   }, [code, isCodeStreaming, activeTab]);
 
@@ -194,12 +202,36 @@ export default function ArtifactPanel({
                 </div>
               </div>
             ) : code ? (
-              <pre className="text-[11px] sm:text-[13px] leading-relaxed font-mono text-zinc-300 whitespace-pre-wrap break-words m-0">
-                <code>{code}</code>
-                {isCodeStreaming && (
-                  <span className="inline-block w-[6px] h-[15px] bg-[#a5d5d5] rounded-sm animate-pulse align-middle ml-0.5" />
+              <div className="relative h-full">
+                {isCodeStreaming ? (
+                  <pre className="text-[11px] sm:text-[13px] leading-relaxed font-mono text-zinc-300 whitespace-pre-wrap break-words m-0">
+                    <code>{code}</code>
+                    <span className="inline-block w-[6px] h-[15px] bg-[#a5d5d5] rounded-sm animate-pulse align-middle ml-0.5" />
+                  </pre>
+                ) : (
+                  <>
+                    <textarea
+                      ref={textareaRef}
+                      className="w-full h-full min-h-[400px] bg-transparent text-[11px] sm:text-[13px] leading-relaxed font-mono text-zinc-300 whitespace-pre break-words m-0 outline-none resize-none border-none focus:ring-0"
+                      value={code}
+                      onChange={(e) => {
+                        setIsEdited(true);
+                        onCodeChange?.(e.target.value);
+                      }}
+                      spellCheck={false}
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                    />
+                    {isEdited && (
+                      <div className="sticky bottom-2 flex justify-end px-2 pointer-events-none">
+                        <span className="text-[10px] text-[#a5d5d5]/70 bg-[#1f1e1d]/90 px-2 py-0.5 rounded-full border border-[#a5d5d5]/20 pointer-events-auto">
+                          Editing — preview updates live
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
-              </pre>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
                 <div className="text-3xl opacity-30">📝</div>

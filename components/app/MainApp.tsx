@@ -5,6 +5,7 @@ import ChatPanel from "./ChatPanel";
 import ArtifactPanel from "./ArtifactPanel";
 import { ChatMessage, AgentStep, ComponentNode, SSEEvent } from "@/lib/types";
 import { treeToCode } from "@/lib/codeGenerator";
+import { codeToTree } from "@/lib/codeParser";
 import logo from "@/images/logo.png"
 import logo_name from "@/images/logo_name.png"
 import Image from "next/image";
@@ -65,6 +66,9 @@ export default function MainApp() {
   const [artifactTab, setArtifactTab] = useState<"preview" | "code">("preview");
   const codeStreamRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Debounce timer for code editing
+  const codeEditTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Versions
   const [totalVersions, setTotalVersions] = useState(0);
   const [currentVersion, setCurrentVersion] = useState<number | null>(null);
@@ -123,7 +127,22 @@ export default function MainApp() {
   useEffect(() => {
     return () => {
       if (codeStreamRef.current) clearInterval(codeStreamRef.current);
+      if (codeEditTimerRef.current) clearTimeout(codeEditTimerRef.current);
     };
+  }, []);
+
+  // ── Handle code edits from the code tab ──
+  const handleCodeChange = useCallback((newCode: string) => {
+    setCode(newCode);
+
+    // Debounce parsing to avoid thrashing on every keystroke
+    if (codeEditTimerRef.current) clearTimeout(codeEditTimerRef.current);
+    codeEditTimerRef.current = setTimeout(() => {
+      const parsed = codeToTree(newCode);
+      if (parsed) {
+        setTree(parsed);
+      }
+    }, 400);
   }, []);
 
   useEffect(() => {
@@ -541,6 +560,7 @@ export default function MainApp() {
                 onClose={() => setShowArtifact(false)}
                 isLoading={isLoading}
                 isCodeStreaming={isCodeStreaming}
+                onCodeChange={handleCodeChange}
               />
             </div>
           </>
@@ -591,6 +611,7 @@ export default function MainApp() {
               onClose={() => setMobileShowArtifact(false)}
               isLoading={isLoading}
               isCodeStreaming={isCodeStreaming}
+              onCodeChange={handleCodeChange}
             />
           )}
         </div>
